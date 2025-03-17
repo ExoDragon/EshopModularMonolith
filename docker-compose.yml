@@ -1,0 +1,10 @@
+services:
+  eshopdb:
+    image: postgres
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    
+volumes:
+  postgres_eshopdb:
+  pgadmin_data:

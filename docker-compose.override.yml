@@ -1,0 +1,22 @@
+services:
+  eshopdb:
+    container_name: eshopdb
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=prostgres
+      - POSTGRES_DB=EShopDb
+    restart: always
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_eshopdb:/var/lib/postgresql/data/
+  pgadmin:
+    container_name: pgadmin4_container
+    restart: always
+    ports:
+      - "8888:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: thomas.terlaak@tummers.nl
+      PGADMIN_DEFAULT_PASSWORD: Tester123
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
