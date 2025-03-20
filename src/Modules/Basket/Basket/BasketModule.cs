@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Basket.Data;
 
 namespace Basket
 {
@@ -9,10 +7,16 @@ namespace Basket
         public static IServiceCollection AddBasketModule(this IServiceCollection services, IConfiguration configuration)
         {
             //Add services to the container.
-            /*services
-                .AddApplicationServices()
-                .AddInfrastructureServices(configuration)
-                .AddApiServices(configuration);*/
+            var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+            services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
+            services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
+
+            services.AddDbContext<BasketDbContext>((sp, options) =>
+            {
+                options.AddInterceptors(sp.GetServices<ISaveChangesInterceptor>());
+                options.UseNpgsql(connectionString);
+            });
 
             return services;
         }
@@ -20,10 +24,8 @@ namespace Basket
         public static IApplicationBuilder UseBasketModule(this IApplicationBuilder app)
         {
             // Configure the HTTP request pipeline.
-            /*app
-                .UseApplicationServices()
-                .UseInfrastructureServices()
-                .UseApiServices();*/
+
+            app.UseMigration<BasketDbContext>();
 
             return app;
         }

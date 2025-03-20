@@ -1,31 +1,59 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Shared.Behaviors;
+using Shared.Data.Interceptors;
 
-namespace Catalog
+namespace Catalog;
+
+public static class CatalogModule
 {
-    public static class CatalogModule
+    public static IServiceCollection AddCatalogModule(this IServiceCollection services, IConfiguration configuration)
     {
-        public static IServiceCollection AddCatalogModule(this IServiceCollection services, IConfiguration configuration)
+        //Add services to the container.
+
+        // Api Endpoint services
+
+
+        // Application Use Case services
+        services.AddMediatR(config =>
         {
-            //Add services to the container.
-            /*services
-                .AddApplicationServices()
-                .AddInfrastructureServices(configuration)
-                .AddApiServices(configuration);*/
+            config.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
+            config.AddOpenBehavior(typeof(ValidationBehavior<,>));
+            config.AddOpenBehavior(typeof(LoggingBehavior<,>));
+        });
 
-            return services;
-        }
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
-        public static IApplicationBuilder UseCatalogModule(this IApplicationBuilder app)
+        // Data - Infrastructure services
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+
+        services.AddScoped<ISaveChangesInterceptor, AuditableEntityInterceptor>();
+        services.AddScoped<ISaveChangesInterceptor, DispatchDomainEventsInterceptor>();
+
+        services.AddDbContext<CatalogDbContext>((serviceProvider, options) =>
         {
-            // Configure the HTTP request pipeline.
-            /*app
-                .UseApplicationServices()
-                .UseInfrastructureServices()
-                .UseApiServices();*/
+            options.AddInterceptors(serviceProvider.GetServices<ISaveChangesInterceptor>());
+            options.UseNpgsql(connectionString);
+        });
 
-            return app;
-        }
+        services.AddScoped<IDataSeeder, CatalogDataSeeder>();
+
+        return services;
+    }
+
+    public static IApplicationBuilder UseCatalogModule(this IApplicationBuilder app)
+    {
+        // Configure the HTTP request pipeline.
+
+        // 1. Use Api Endpoint services
+
+        // 2. Use Application Use eCase services
+
+        // 3. Use Data - Infrastructure services
+        app.UseMigration<CatalogDbContext>();
+
+        return app;
     }
 }

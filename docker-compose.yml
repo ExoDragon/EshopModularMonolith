@@ -2,6 +2,9 @@ services:
   eshopdb:
     image: postgres
   
+  seq:
+    image: datalust/seq:latest
+
   pgadmin:
     image: dpage/pgadmin4
     
